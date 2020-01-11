@@ -24,7 +24,7 @@ function ping(options) {
     const opts = {
         method: 'GET',
         url: `http://${options.hostname}:${options.port}/ping`,
-        timeout: options.timeout || 5000, // Set default timeout to 5s
+        timeout: options.timeout || 30000, // Set default timeout to 30s
     };
 
     return new Promise((resolve, reject) => {
@@ -42,6 +42,16 @@ function ping(options) {
     });
 }
 
+process.on('uncaughtException', function (err) {
+    if (err.code === 'ECONNRESET') {
+        // Dirty hack to keep Scrapoxy running on uncaught socket errors
+        winston.error('!!! Uncaught Exception !!! :', err);
+    } else {
+        console.error('uncaughtException: ' + err.message);
+        console.error(err.stack);
+        process.exit(1);             // exit with error
+    }
+});
 
 function pingRetry(options, retry, retryDelay) {
     if (!options || !options.hostname || !options.port || !retryDelay) {
